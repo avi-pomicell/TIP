@@ -25,7 +25,7 @@ for e in range(MAX_EPOCH):
 	model.train()
 	optimizer.zero_grad()
 	loss = model()
-	print(loss.item())
+	print(f'epoch {e} loss: {loss.item()}')
 	loss.backward()
 	optimizer.step()
 
