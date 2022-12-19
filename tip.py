@@ -6,6 +6,11 @@ from src.layers import *
 MOD = 'cat'
 MAX_EPOCH = 100
 
+if torch.cuda.is_available():
+    print('cuda available')
+else:
+    print('no cuda')    
+
 # set training device
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
