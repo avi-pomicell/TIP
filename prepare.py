@@ -7,7 +7,7 @@ with open('./data/decagon_et.pkl', 'rb') as f:   # the whole dataset
 
 out_file = './data/data_dict.pkl'
 
-data = load_data_torch("./data/", et_list, mono=True)
+data = load_data_torch("./data/", et_list, mono=False)
 
 # graph features
 data['n_drug'] = data['d_feat'].shape[0]
