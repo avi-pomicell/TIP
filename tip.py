@@ -30,12 +30,13 @@ for e in range(MAX_EPOCH):
 	model.train()
 	optimizer.zero_grad()
 	loss = model()
-	print(f'epoch {e} loss: {loss.item()}')
+	print(f'epoch {e} loss: {loss.item()}')  # epoch 0 loss: 1.3866474628448486, epoch 99 loss: 0.7132794857025146
 	loss.backward()
 	optimizer.step()
 
 # evaluate on test set
-model.test()
+model.test() # On test set: auprc:0.8949   auroc:0.9185   ap@50:0.8959 
+
 
 # save trained model
 torch.save(model, f'saved_model/tip-{model.mod}-example.pt')
