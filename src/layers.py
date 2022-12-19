@@ -316,7 +316,7 @@ class TIP(nn.Module):
 				mod='add'
 			).to(self.device)
 		
-		self.embeddings = self.encoder(self.data.d_feat, self.data.dd_train_idx, self.data.dd_train_et, self.data.dd_train_range, self.data.d_norm, self.data.p_feat, self.data.pp_train_indices, self.data.dp_edge_index, self.data.dp_range_list).to(device)
+		self.embeddings = self.encoder(self.data.d_feat, self.data.dd_train_idx, self.data.dd_train_et, self.data.dd_train_range, self.data.d_norm, self.data.p_feat, self.data.pp_train_indices, self.data.dp_edge_index, self.data.dp_range_list).to(self.device)
 
 		# decoder
 		self.decoder = MultiInnerProductDecoder(
