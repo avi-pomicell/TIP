@@ -216,7 +216,8 @@ def process_prot_edge(pp_net):
     indices = remove_bidirection(indices, None)
     n_edge = indices.shape[1]
 
-    rd = np.random.binomial(1, 0.9, n_edge)
+    # rd = np.random.binomial(1, 0.9, n_edge)
+    rd = np.random.binomial(1, 1, n_edge)  # use all pp edges for training and inference
     train_mask = rd.nonzero()[0]
     test_mask = (1 - rd).nonzero()[0]
 
