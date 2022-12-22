@@ -89,7 +89,10 @@ def process_edges(raw_edge_list, p=0.9, stratified=False):
     train_et = torch.cat(train_label_list)
     test_et = torch.cat(test_label_list)
 
-    return train_edge_idx, train_et, train_range, test_edge_idx, test_et, test_range
+    if stratified:
+        return train_edge_idx, train_et, train_range, test_edge_idx, test_et, test_range, test_drugs
+    else:
+        return train_edge_idx, train_et, train_range, test_edge_idx, test_et, test_range
 
 
 def sparse_id(n):

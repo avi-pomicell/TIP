@@ -286,10 +286,6 @@ class TIP(nn.Module):
         # load data
         data = Data.from_dict(data_dict)
 
-        if sp_rate != 0.9:
-            data.dd_train_idx, data.dd_train_et, data.dd_train_range, data.dd_test_idx, data.dd_test_et, data.dd_test_range = process_edges(
-                data.dd_edge_index, p=sp_rate, stratified=True)
-
         self.test_neg_index = typed_negative_sampling(data.dd_test_idx, data.n_drug, data.dd_test_range)
 
         return data
@@ -334,8 +330,8 @@ class TIP(nn.Module):
                                        self.data.pp_train_indices, self.data.dp_edge_index, self.data.dp_range_list)
 
         pos_index = self.data.dd_train_idx
-        neg_index = typed_negative_sampling(self.data.dd_train_idx, self.data.n_drug, self.data.dd_train_range).type_as(
-            pos_index)
+        neg_index = typed_negative_sampling(self.data.dd_train_idx, self.data.n_drug, self.data.dd_train_range,
+                                            self.data.test_drugs).type_as(pos_index)
 
         pos_score = self.decoder(self.embeddings, pos_index, self.data.dd_train_et)
         neg_score = self.decoder(self.embeddings, neg_index, self.data.dd_train_et)

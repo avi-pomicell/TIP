@@ -3,7 +3,7 @@ from src.utils import *
 import pickle
 
 
-def prepare_data(mono=True):
+def prepare_data(mono=True, sp_rate=0.9):
     with open('./data/decagon_et.pkl', 'rb') as f:  # the whole dataset
         et_list = pickle.load(f)
     data = load_data_torch("./data/", et_list, mono=mono)
@@ -11,8 +11,8 @@ def prepare_data(mono=True):
     data['n_drug'] = data['d_feat'].shape[0]
     data['n_prot'] = data['p_feat'].shape[0]
     data['n_dd_et'] = len(et_list)
-    data['dd_train_idx'], data['dd_train_et'], data['dd_train_range'], data['dd_test_idx'], data['dd_test_et'], data[
-        'dd_test_range'] = process_edges(data['dd_edge_index'], stratified=True)
+    data['dd_train_idx'], data['dd_train_et'], data['dd_train_range'], data['dd_test_idx'], data['dd_test_et'], \
+        data['dd_test_range'], data['test_drugs'] = process_edges(data['dd_edge_index'], sp_rate, stratified=True)
     data['pp_train_indices'], data['pp_test_indices'] = process_prot_edge(data['pp_adj'])
     # TODO: add drug feature
     data['d_feat'] = sparse_id(data['n_drug'])
