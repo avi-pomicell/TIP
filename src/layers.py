@@ -288,7 +288,7 @@ class TIP(nn.Module):
 
         if sp_rate != 0.9:
             data.dd_train_idx, data.dd_train_et, data.dd_train_range, data.dd_test_idx, data.dd_test_et, data.dd_test_range = process_edges(
-                data.dd_edge_index, p=sp_rate)
+                data.dd_edge_index, p=sp_rate, stratified=True)
 
         self.test_neg_index = typed_negative_sampling(data.dd_test_idx, data.n_drug, data.dd_test_range)
 

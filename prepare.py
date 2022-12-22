@@ -12,7 +12,7 @@ def prepare_data(mono=True):
     data['n_prot'] = data['p_feat'].shape[0]
     data['n_dd_et'] = len(et_list)
     data['dd_train_idx'], data['dd_train_et'], data['dd_train_range'], data['dd_test_idx'], data['dd_test_et'], data[
-        'dd_test_range'] = process_edges(data['dd_edge_index'])
+        'dd_test_range'] = process_edges(data['dd_edge_index'], stratified=True)
     data['pp_train_indices'], data['pp_test_indices'] = process_prot_edge(data['pp_adj'])
     # TODO: add drug feature
     data['d_feat'] = sparse_id(data['n_drug'])

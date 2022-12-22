@@ -2,6 +2,7 @@ from sklearn import metrics
 import scipy.sparse as sp
 import numpy as np
 import torch
+from sklearn.model_selection import train_test_split
 
 
 def remove_bidirection(edge_index, edge_type):
@@ -32,23 +33,49 @@ def get_range_list(edge_list):
     return torch.tensor(tmp)
 
 
-def process_edges(raw_edge_list, p=0.9):
+def process_edges(raw_edge_list, p=0.9, stratified=False):
     train_list = []
     test_list = []
     train_label_list = []
     test_label_list = []
 
-    for i, idx in enumerate(raw_edge_list):
-        train_mask = np.random.binomial(1, p, idx.shape[1])
-        test_mask = 1 - train_mask
-        train_set = train_mask.nonzero()[0]
-        test_set = test_mask.nonzero()[0]
+    if stratified:
 
-        train_list.append(idx[:, train_set])
-        test_list.append(idx[:, test_set])
+        # get all drugs
+        drugs = set()
+        for item in raw_edge_list:
+            drugs.update(item.flatten().tolist())
+        train_drugs, test_drugs = train_test_split(list(drugs), train_size=p)
 
-        train_label_list.append(torch.ones(2 * train_set.size, dtype=torch.long) * i)
-        test_label_list.append(torch.ones(2 * test_set.size, dtype=torch.long) * i)
+        for i, idx in enumerate(raw_edge_list):
+            # train_mask = np.random.binomial(1, p, idx.shape[1])
+            # test_mask = 1 - train_mask
+            test_mask = np.isin(idx[0,:], test_drugs) | np.isin(idx[1,:], test_drugs)
+            train_mask = 1 - test_mask
+            train_set = train_mask.nonzero()[0]
+            test_set = test_mask.nonzero()[0]
+
+            assert train_set.size + test_set.size == idx.shape[1], \
+                "expecting all edges to be either in train set or in test set, exclusively"
+
+            train_list.append(idx[:, train_set])
+            test_list.append(idx[:, test_set])
+
+            train_label_list.append(torch.ones(2 * train_set.size, dtype=torch.long) * i)
+            test_label_list.append(torch.ones(2 * test_set.size, dtype=torch.long) * i)
+
+    else:
+        for i, idx in enumerate(raw_edge_list):
+            train_mask = np.random.binomial(1, p, idx.shape[1])
+            test_mask = 1 - train_mask
+            train_set = train_mask.nonzero()[0]
+            test_set = test_mask.nonzero()[0]
+
+            train_list.append(idx[:, train_set])
+            test_list.append(idx[:, test_set])
+
+            train_label_list.append(torch.ones(2 * train_set.size, dtype=torch.long) * i)
+            test_label_list.append(torch.ones(2 * test_set.size, dtype=torch.long) * i)
 
     train_list = [to_bidirection(idx) for idx in train_list]
     test_list = [to_bidirection(idx) for idx in test_list]
