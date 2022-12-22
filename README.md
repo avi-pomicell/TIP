@@ -45,14 +45,14 @@ TIP is implemented in [PyTorch]([`pytorch`](https://pytorch.org/)) with [PyG](ht
 You can install the `pytorch` and `pyg` packages with the versions that matches your hardware, or use the same environment as mine using the following commands:
 
 ```shell
-$ conda create -n tip-gpu python==3.9
-$ conda install pytorch==1.8.0 torchvision==0.9.0 torchaudio==0.8.0 cudatoolkit=10.2 -c pytorch
-$ conda install pyg==2.0.1 -c pyg -c conda-forge	
+conda create -y -n tip-gpu python==3.9
+conda install -y -n tip-gpu pytorch==1.8.0 torchvision==0.9.0 torchaudio==0.8.0 cudatoolkit=10.2 -c pytorch 
+conda install -y -n tip-gpu pyg==2.0.1 -c pyg -c conda-forge	
 ```
 
 *(Optional)* If you are interested in monitoring GPU memory usage of the model, the `pytorch_memlab` package is helpful.
 ```shell
-$ pip install pytorch_memlab
+pip install pytorch_memlab
 ```
 
 *(Optional)* TIP is trained and tested on a single **GPU**. If you are interested in training TIP using multiple GPUs, `pytorch_lightning` would be helpful.
