@@ -286,7 +286,8 @@ class TIP(nn.Module):
         # load data
         data = Data.from_dict(data_dict)
 
-        self.test_neg_index = typed_negative_sampling(data.dd_test_idx, data.n_drug, data.dd_test_range)
+        self.test_neg_index = typed_negative_sampling(data.dd_test_idx, data.n_drug, data.dd_test_range,
+                                                      data.test_drugs, mode='test')
 
         return data
 
