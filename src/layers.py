@@ -355,9 +355,12 @@ class TIP(nn.Module):
         return self.compute_auprc_auroc_ap_by_et(pos_score, neg_score, self.data.dd_test_range, print_output)
 
     def compute_auprc_auroc_ap_by_et(self, pos_score, neg_score, dd_range, print_out):
-        record = np.zeros((3, self.data.n_dd_et))  # auprc, auroc, ap
+        record = list()
         for i in range(dd_range.shape[0]):
             [start, end] = dd_range[i]
+            if start == end:
+                print(f'edge type {i} has no test candidates. skipping it')
+                continue
             p_s = pos_score[start: end]
             n_s = neg_score[start: end]
 
@@ -367,10 +370,10 @@ class TIP(nn.Module):
             score = torch.cat([p_s, n_s])
             target = torch.cat([pos_target, neg_target])
 
-            record[0, i], record[1, i], record[2, i] = auprc_auroc_ap(target, score)
-
+            record.append(auprc_auroc_ap(target, score))
+        record = np.array(record)
         if print_out:
-            [auprc, auroc, ap] = record.sum(axis=1) / self.data.n_dd_et
+            [auprc, auroc, ap] = record.mean(axis=0)
 
             print('On test set: auprc:{:0.4f}   auroc:{:0.4f}   ap@50:{:0.4f}    '.format(auprc, auroc, ap))
 
@@ -535,7 +538,7 @@ class FMEncoder(torch.nn.Module):
         # d-embed
         x_drug = torch.matmul(x_drug, self.embed)
         # x_drug = checkpoint(torch.matmul, x_drug, self.embed)
-        x_drug = x_drug / d_norm.view(-1, 1)
+        # x_drug = x_drug / d_norm.view(-1, 1)  # d_norm was ones and now this doesn't work
 
         if self.mod == 'cat':
             x_drug = torch.cat((x_drug, x_prot), dim=1)
