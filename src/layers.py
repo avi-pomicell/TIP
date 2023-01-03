@@ -359,7 +359,7 @@ class TIP(nn.Module):
         for i in range(dd_range.shape[0]):
             [start, end] = dd_range[i]
             if start == end:
-                print(f'edge type {i} has no test candidates. skipping it')
+                # print(f'edge type {i} has no test candidates. skipping it')
                 continue
             p_s = pos_score[start: end]
             n_s = neg_score[start: end]
