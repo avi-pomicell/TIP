@@ -10,27 +10,31 @@ from src.layers import *
 # choose TIP model: 'cat' - TIP-cat
 #					'add' - TIP-add
 MOD = 'cat'
-MAX_EPOCH = 100
+MAX_EPOCH = 150
 MONO_DRUG_SIDES = False
 
 if torch.cuda.is_available():
     print('cuda available')
 else:
     print('no cuda')
-data_dict = prepare_data(MONO_DRUG_SIDES)
+# data_dict = prepare_data(MONO_DRUG_SIDES)
 
-joblib.dump(data_dict, 'data_dict-v2.joblib')
+# joblib.dump(data_dict, 'data_dict-v2.joblib')
 data_dict = joblib.load('data_dict-v2.joblib')
 # set training device
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # initial model
 if MOD == 'cat':
-    settings = Setting(sp_rate=0.9, lr=0.01, prot_drug_dim=16, n_embed=48, n_hid1=32, n_hid2=16, num_base=32)
+    settings = Setting(sp_rate=0.9, lr=0.001, prot_drug_dim=64, n_embed=192, n_hid1=256, n_hid2=128, num_base=24)
     model = TIP(settings, device, data_dict=data_dict)
 else:
     settings = Setting(sp_rate=0.9, lr=0.01, prot_drug_dim=64, n_embed=64, n_hid1=32, n_hid2=16, num_base=32)
     model = TIP(settings, device, mod='add', data_dict=data_dict)
+    
+
+print(settings.__dict__)
+
 
 # initial optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=settings.lr)
@@ -51,6 +55,9 @@ model.test()  # On test set: auprc:0.8949   auroc:0.9185   ap@50:0.8959
 
 # save trained model
 torch.save(model, f'./tip-{model.mod}-v2.pt')
+print(settings.__dict__)
+exit(0)
+
 
 model = torch.load(f'./tip-{model.mod}-v2.pt')
 
