@@ -14,7 +14,7 @@ def prepare_data(mono=False, drug_dim=512, sp_rate=0.9):
     if mono:
         raise NotImplementedError
     data = dict()
-    drug_info, ppi, ddi = joblib.load('./data/tip_dataset_v2.joblib')
+    drug_info, ppi, ddi = joblib.load('./data/tip_dataset_v2.1.joblib')
     drug_info['mols'] = drug_info['smiles'].apply(lambda s: Chem.MolFromSmiles(s))
 
     drug_info = drug_info[pd.notna(drug_info['mols'])]  # dropping 4 drugs that don't have valid smiles

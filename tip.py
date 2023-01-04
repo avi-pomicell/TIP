@@ -10,16 +10,17 @@ from src.layers import *
 # choose TIP model: 'cat' - TIP-cat
 #					'add' - TIP-add
 MOD = 'cat'
-MAX_EPOCH = 150
+MAX_EPOCH = 100
 MONO_DRUG_SIDES = False
 
 if torch.cuda.is_available():
     print('cuda available')
 else:
     print('no cuda')
-# data_dict = prepare_data(MONO_DRUG_SIDES)
+    
+data_dict = prepare_data(MONO_DRUG_SIDES)
+joblib.dump(data_dict, 'data_dict-v2.joblib')
 
-# joblib.dump(data_dict, 'data_dict-v2.joblib')
 data_dict = joblib.load('data_dict-v2.joblib')
 # set training device
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -56,7 +57,6 @@ model.test()  # On test set: auprc:0.8949   auroc:0.9185   ap@50:0.8959
 # save trained model
 torch.save(model, f'./tip-{model.mod}-v2.pt')
 print(settings.__dict__)
-exit(0)
 
 
 model = torch.load(f'./tip-{model.mod}-v2.pt')
@@ -74,18 +74,17 @@ q_pairs = [
     ('Cannabidiol', 'Cannabigerol', 'Linalool'),
     ('Cannabidiol', 'Cannabigerol', 'D-LIMONENE'),
     # should have side effect:
-    # ('Glycopyrronium', 'Adenosine'),
-    # ('Glycopyrronium', 'Aprotinin'),
-    # ('Glycopyrronium', 'Betaine'),
-    # ('Glycopyrronium', 'Bethanidine'),
     ('Cannabidiol', 'KOUMIDINE'),
     ('Cannabidiol', 'chlorothiazide'),
+    ('Cannabidiol', 'Methadone'),
+    ('Cannabidiol', 'Mirtazapine'),
+    ('Cannabidiol', 'Zolmitriptan'),
     ('Benzocaine', 'Acetazolamide'),
     ('Benzocaine', 'Acyclovir'),
     ('clemastine', 'minaprine'), # "#Drug1 may increase the anticholinergic activities of #Drug2."
     ('oxazepam', 'dihydroergotamine'), # "The metabolism of #Drug2 can be decreased when combined with #Drug1."
 ]
-for i in range(5):
+for i in range(15):
     random.seed(i)
     d1, d2 = random.sample(data_dict['name2diid'].keys(), 2)
     q_pairs.append((d1,d2))
@@ -106,15 +105,16 @@ def predict_pair(d1, d2):
 
 for pair in q_pairs:
     pair_iids = [data_dict['name2diid'][p.lower()] for p in pair]
+    pair_lbl = ' + '.join(pair)
     if len(pair_iids) == 2:
         d1, d2 = pair_iids
-        predictions[pair] = predict_pair(d1, d2)
+        predictions[pair_lbl] = predict_pair(d1, d2)
     else:
         d1, d2, d3 = pair_iids
-        predictions[pair] = np.max([predict_pair(d1,d2), predict_pair(d2,d3), predict_pair(d1,d3)], axis=0)
+        predictions[pair_lbl] = np.max([predict_pair(d1,d2), predict_pair(d2,d3), predict_pair(d1,d3)], axis=0)
 predictions = pd.DataFrame.from_dict(predictions, orient='index', columns=data_dict['side_effect_name'].values())
 predictions = predictions.reindex(predictions[:11].mean().sort_values(ascending=False).index, axis=1)
-predictions.T.to_csv('tip-results.csv')
+predictions.T.to_csv('tip-results-v2.csv')
 top_predictions = {}
 for pair, row in predictions.iterrows():
     row = row.sort_values(ascending=False)[:5]
@@ -154,4 +154,10 @@ epoch 62 loss: 0.35680705308914185
 ...
 epoch 69 loss: 0.3328017592430115
 On test set: auprc:0.8019   auroc:0.8146   ap@50:0.8170  
+"""
+
+""" on pomicell dataset (v2):
+epoch 99 loss: 0.16707593202590942
+On test set: auprc:0.9068   auroc:0.9201   ap@50:0.9085    
+{'sp_rate': 0.9, 'lr': 0.001, 'prot_drug_dim': 64, 'n_embed': 192, 'n_hid1': 256, 'n_hid2': 128, 'num_base': 24}
 """
