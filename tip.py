@@ -2,6 +2,8 @@ import random
 
 import joblib
 import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
 
 from prepare import prepare_data
 from src.utils import *
@@ -74,17 +76,31 @@ q_pairs = [
     ('Cannabidiol', 'Cannabigerol', 'Linalool'),
     ('Cannabidiol', 'Cannabigerol', 'D-LIMONENE'),
     # should have side effect:
-    ('Cannabidiol', 'KOUMIDINE'),
-    ('Cannabidiol', 'chlorothiazide'),
-    ('Cannabidiol', 'Methadone'),
-    ('Cannabidiol', 'Mirtazapine'),
-    ('Cannabidiol', 'Zolmitriptan'),
-    ('Benzocaine', 'Acetazolamide'),
-    ('Benzocaine', 'Acyclovir'),
+    # ('Cannabidiol', 'KOUMIDINE'),
+    # ('Cannabidiol', 'chlorothiazide'),
+    # ('Cannabidiol', 'Methadone'),
+    # ('Cannabidiol', 'Mirtazapine'),
+    # ('Cannabidiol', 'Zolmitriptan'),
+    # from drug.com :
+    ('Cannabidiol', 'buprenorphine'),
+    ('Cannabidiol', 'esketamine'),
+    ('Cannabidiol', 'ketamine'),
+    ('Cannabidiol', 'leflunomide'),
+    ('Cannabidiol', 'levomethadyl acetate'),
+    ('Cannabidiol', 'lomitapide'),
+    ('Cannabidiol', 'levoketoconazole'),
+    ('Cannabidiol', 'mipomersen'),
+    ('Cannabidiol', 'morphine'),
+    ('Cannabidiol', 'pexidartinib'),
+    ('Cannabidiol', 'propoxyphene'),
+    ('Cannabidiol', 'relugolix'),
+    ('Cannabidiol', 'sodium oxybate'),
+    ('Cannabidiol', 'teriflunomide'),
+    # from drugbank:
     ('clemastine', 'minaprine'), # "#Drug1 may increase the anticholinergic activities of #Drug2."
     ('oxazepam', 'dihydroergotamine'), # "The metabolism of #Drug2 can be decreased when combined with #Drug1."
 ]
-for i in range(15):
+for i in range(100):
     random.seed(i)
     d1, d2 = random.sample(data_dict['name2diid'].keys(), 2)
     q_pairs.append((d1,d2))
@@ -114,7 +130,9 @@ for pair in q_pairs:
         predictions[pair_lbl] = np.max([predict_pair(d1,d2), predict_pair(d2,d3), predict_pair(d1,d3)], axis=0)
 predictions = pd.DataFrame.from_dict(predictions, orient='index', columns=data_dict['side_effect_name'].values())
 predictions = predictions.reindex(predictions[:11].mean().sort_values(ascending=False).index, axis=1)
+pred_normed = pd.DataFrame(StandardScaler().fit_transform(predictions), index=predictions.index, columns=predictions.columns)
 predictions.T.to_csv('tip-results-v2.csv')
+pred_normed.T.to_csv('tip-results-v2-normed.csv')
 top_predictions = {}
 for pair, row in predictions.iterrows():
     row = row.sort_values(ascending=False)[:5]
