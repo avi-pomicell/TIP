@@ -14,7 +14,7 @@ def prepare_data(mono=False, drug_dim=512, sp_rate=0.9):
     if mono:
         raise NotImplementedError
     data = dict()
-    drug_info, ppi, ddi = joblib.load('./data/tip_dataset_v2.1.joblib')
+    drug_info, ppi, ddi = joblib.load('./data/tip_dataset_v2.2.joblib')
     drug_info['mols'] = drug_info['smiles'].apply(lambda s: Chem.MolFromSmiles(s))
 
     drug_info = drug_info[pd.notna(drug_info['mols'])]  # dropping 4 drugs that don't have valid smiles
@@ -175,6 +175,9 @@ def split(raw_edge_list, drug_info, dpid2diid, stratified=True):
 
             train_label_list.append(torch.ones(2 * train_set.size, dtype=torch.long) * i)
             test_label_list.append(torch.ones(2 * test_set.size, dtype=torch.long) * i)
+        # query drugs should not be used in train set
+        test_drugs += [np.int64(dpid2diid[x]) for x in drug_info[drug_info.split == 'q'].index]
+
 
     else:
         for i, idx in enumerate(raw_edge_list):
@@ -210,8 +213,6 @@ def split(raw_edge_list, drug_info, dpid2diid, stratified=True):
 if __name__ == '__main__':
     data = prepare_data()
 
-    out_file = './data/data_dict.pkl'
-    with open(out_file, 'wb') as f:
-        pickle.dump(data, f)
+    joblib.dump(data, 'data_dict-v2.joblib')
 
-    print("Data has been prepared and is ready to use --> ./data/data_dict.pkl")
+    print("Data has been prepared and is ready to use ")
