@@ -122,6 +122,17 @@ def auprc_auroc_ap(target_tensor, score_tensor):
 
     return auprc, auroc, ap
 
+def auprc_auroc_ap_acc(target_tensor, score_tensor):
+    y = target_tensor.detach().cpu().numpy()
+    pred = score_tensor.detach().cpu().numpy()
+    auroc, ap = metrics.roc_auc_score(y, pred), metrics.average_precision_score(y, pred)
+    yy, xx, _ = metrics.precision_recall_curve(y, pred)
+    auprc = metrics.auc(xx, yy)
+    pred_ = np.ones_like(pred)
+    pred_[pred<=0.5] = 0
+    acc = metrics.accuracy_score(y, pred_)
+
+    return auprc, auroc, ap, acc
 
 def uniform(size, tensor):
     bound = 1.0 / np.sqrt(size)

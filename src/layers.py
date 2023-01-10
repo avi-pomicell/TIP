@@ -346,13 +346,91 @@ class TIP(nn.Module):
     def pred(self, dd_idx, dd_et):
         return self.decoder(self.embeddings, dd_idx, dd_et)
 
-    def test(self, print_output=True):
+    def test(self, print_output=True, calibrated=False):
         self.eval()
+
+        pos_score = self.predict(self.data.dd_test_idx, self.data.dd_test_et, calibrated=calibrated)
+        neg_score = self.predict(self.test_neg_index, self.data.dd_test_et, calibrated=calibrated)
+
+        return self.compute_auprc_auroc_ap_by_et(pos_score, neg_score, self.data.dd_test_range, print_output)
+
+    def test_ts_tx(self, print_output=True, calibrated=False, mode='tsts'):
+        """
+        test with only ts-ts pairs (test-test) or only ts-tr pairs (one drug from test and the other from the train set)
+        the positive samples are filtered from the larger test set
+        the negative samples are re-generated.
+        Args:
+            print_output:
+            calibrated:
+            mode: 'tsts' - only test-test pairs, 'tstr'- only test-train pairs.
+
+        Returns:
+
+        """
+        self.eval()
+        tstx_list = []
+        tstx_label_list = []
+        test_drugs = self.data.test_drugs
+        for i in range(self.data.dd_test_range.shape[0]):
+            [start, end] = self.data.dd_test_range[i]
+            if start == end:
+                continue
+            idx = self.data.dd_test_idx[:,start: end].cpu()
+            if mode == 'tsts':
+                tstx_mask = np.isin(idx[0, :], test_drugs) & np.isin(idx[1, :], test_drugs)
+            elif mode == 'tstr':
+                tstx_mask = np.isin(idx[0, :], test_drugs) ^ np.isin(idx[1, :], test_drugs)
+            else:
+                raise ValueError
+            tstx_set = idx[:, tstx_mask]
+            tstx_list.append(tstx_set)
+            tstx_label_list.append(torch.ones(tstx_set.shape[1], dtype=torch.long) * i)
+
+        tstx_range = get_range_list(tstx_list)
+        tstx_edge_idx = torch.cat(tstx_list, dim=1)
+        tstx_et = torch.cat(tstx_label_list)
+        tstx_neg_index = typed_negative_sampling(tstx_edge_idx, self.data.n_drug, tstx_range,
+                                                 test_drugs=test_drugs, mode=mode)
+
+        pos_score = self.predict(tstx_edge_idx, tstx_et, calibrated=calibrated)
+        neg_score = self.predict(tstx_neg_index, tstx_et, calibrated=calibrated)
+
+        return self.compute_auprc_auroc_ap_by_et(pos_score, neg_score, tstx_range, print_output)
+    def calibrate(self):
+        test_range = self.data.dd_test_range
 
         pos_score = self.decoder(self.embeddings, self.data.dd_test_idx, self.data.dd_test_et)
         neg_score = self.decoder(self.embeddings, self.test_neg_index, self.data.dd_test_et)
+        mean_score = list()
+        for i in range(test_range.shape[0]):
+            [start, end] = test_range[i]
+            if start == end:
+                # print(f'edge type {i} has no test candidates. skipping it')
+                mean_score.append(torch.log(torch.tensor(0.5)))
+                continue
+            p_s = pos_score[start: end]
+            n_s = neg_score[start: end]
+            # score = torch.cat([p_s, n_s])
+            # score = torch.log(score)
+            # mean_score.append(float(score.mean()))
+            score = torch.cat([torch.median(torch.log(p_s)).unsqueeze(0),
+                               torch.median(torch.log(n_s)).unsqueeze(0)]).mean()
+            mean_score.append(score)
+        self.calibration = torch.tensor(mean_score)
+        self.calibration = torch.exp(self.calibration)
+        self.calibration = self.calibration.to(self.device)
 
-        return self.compute_auprc_auroc_ap_by_et(pos_score, neg_score, self.data.dd_test_range, print_output)
+    def predict(self, q_edge_idx, q_et, calibrated=True):
+        # self.decoder(self.embeddings, q_edge_idx, q_et).detach().cpu().numpy()
+        pred = self.decoder(self.embeddings, q_edge_idx, q_et)
+        if calibrated:
+            if not hasattr(self, 'calibration'):
+                self.calibrate()
+            cal = -torch.log(torch.tensor(2.0)) / torch.log(self.calibration)
+            pred = torch.pow(pred, cal[q_et])
+        return pred
+
+
 
     def compute_auprc_auroc_ap_by_et(self, pos_score, neg_score, dd_range, print_out):
         record = list()
@@ -370,12 +448,12 @@ class TIP(nn.Module):
             score = torch.cat([p_s, n_s])
             target = torch.cat([pos_target, neg_target])
 
-            record.append(auprc_auroc_ap(target, score))
+            record.append(auprc_auroc_ap_acc(target, score))
         record = np.array(record)
         if print_out:
-            [auprc, auroc, ap] = record.mean(axis=0)
+            [auprc, auroc, ap, acc] = record.mean(axis=0)
 
-            print('On test set: auprc:{:0.4f}   auroc:{:0.4f}   ap@50:{:0.4f}    '.format(auprc, auroc, ap))
+            print('On test set: auprc:{:0.4f}   auroc:{:0.4f}   ap@50:{:0.4f}   acc:{:0.4f}  '.format(auprc, auroc, ap, acc))
 
         return record
 

@@ -115,7 +115,8 @@ def predict_pair(d1, d2):
         q_label_list.append(torch.ones(1, dtype=torch.long) * i)
     q_edge_idx = torch.stack(q_list, dim=1)
     q_et = torch.cat(q_label_list)
-    pred = model.decoder(model.embeddings, q_edge_idx, q_et).detach().cpu().numpy()
+    # pred = model.decoder(model.embeddings, q_edge_idx, q_et).detach().cpu().numpy()
+    pred = model.predict(q_edge_idx, q_et).detach().cpu().numpy()
     return pred
 
 
