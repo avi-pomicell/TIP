@@ -129,7 +129,8 @@ for pair in q_pairs:
     else:
         d1, d2, d3 = pair_iids
         predictions[pair_lbl] = np.max([predict_pair(d1,d2), predict_pair(d2,d3), predict_pair(d1,d3)], axis=0)
-predictions = pd.DataFrame.from_dict(predictions, orient='index', columns=data_dict['side_effect_name'].values())
+side_effect_names = dict(sorted(data_dict['side_effect_name'].items())).values()
+predictions = pd.DataFrame.from_dict(predictions, orient='index', columns=side_effect_names)
 predictions = predictions.reindex(predictions[:11].mean().sort_values(ascending=False).index, axis=1)
 pred_normed = pd.DataFrame(StandardScaler().fit_transform(predictions), index=predictions.index, columns=predictions.columns)
 predictions.T.to_csv('tip-results-v2.csv')
